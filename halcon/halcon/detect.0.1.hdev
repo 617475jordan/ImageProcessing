@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="main">
+<interface/>
+<body>
+<l>dev_update_pc ('off')  </l>
+<l>dev_update_window ('off')  </l>
+<l>dev_update_var ('off')  </l>
+<l>open_framegrabber ('File', 1, 1, 0, 0, 0, 0, 'default', -1, 'default', -1, 'default', 'board/board.seq', 'default', -1, 1, FGHandle)  </l>
+<l>grab_image (Image, FGHandle)  </l>
+<l>get_image_size (Image, Width, Height)  </l>
+<l>dev_close_window ()  </l>
+<l>dev_open_window (0, 0, Width, Height, 'black', WindowHandle)  </l>
+<l>dev_open_window (Height+70, 0, Width, 120, 'black', WindowHandleText)  </l>
+<l>dev_set_window (WindowHandle)  </l>
+<l>set_display_font (WindowHandle, 16, 'mono', 'true', 'false')  </l>
+<l>set_display_font (WindowHandleText, 16, 'mono', 'true', 'false')  </l>
+<l>dev_set_color ('red')  </l>
+<l>dev_display (Image)  </l>
+<c>***设置roi区域的大小，方便修改  </c>
+<l>Row1 := 188  </l>
+<l>Column1 := 182  </l>
+<l>Row2 := 298  </l>
+<l>Column2 := 412  </l>
+<l>gen_rectangle1 (Rectangle, Row1, Column1, Row2, Column2)  </l>
+<l>area_center (Rectangle, Area, Row, Column)  </l>
+<l>Rect1Row := -102  </l>
+<l>Rect1Col := 5  </l>
+<l>Rect2Row := 107  </l>
+<l>Rect2Col := 5  </l>
+<l>RectPhi := 0  </l>
+<l>RectLength1 := 170  </l>
+<l>RectLength2 := 5 </l>
+<l>gen_rectangle2 (Rectangle1, Row+Rect1Row, Column+Rect1Col, RectPhi, RectLength1, RectLength2)  </l>
+<l>gen_rectangle2 (Rectangle2, Row+Rect2Row, Column+Rect2Col, RectPhi, RectLength1, RectLength2)  </l>
+<l>reduce_domain (Image, Rectangle, ImageReduced)  </l>
+<c>***参数含义依次为 选取的模板图像、金字塔的水平、最小旋转角度、匹配对象的旋转角度范围、角度步长、模型产生的方式、匹配标准、  </c>
+<c>***模板的中对象与背景阈值对比以及模板的尺寸、在图像的中的最小对比度。  </c>
+<l>create_shape_model (ImageReduced, 4, 0, rad(360), rad(1), 'none', 'use_polarity', 30, 10, ModelID)  </l>
+<l>get_shape_model_contours (ShapeModel, ModelID, 1)  </l>
+<l>hom_mat2d_identity (HomMat2DIdentity)  </l>
+<l>hom_mat2d_translate (HomMat2DIdentity, Row, Column, HomMat2DTranslate)  </l>
+<l>affine_trans_contour_xld (ShapeModel, ShapeModelTrans, HomMat2DTranslate)  </l>
+<l>dev_display (Image)  </l>
+<l>dev_set_color ('green')  </l>
+<l>dev_display (ShapeModelTrans)  </l>
+<l>dev_set_color ('blue')  </l>
+<l>dev_set_draw ('margin')  </l>
+<l>dev_set_line_width (3)  </l>
+<l>dev_display (Rectangle1)  </l>
+<l>dev_display (Rectangle2)  </l>
+<l>dev_set_draw ('fill')  </l>
+<l>dev_set_line_width (1)  </l>
+<l>dev_set_color ('yellow')  </l>
+<l>disp_message (WindowHandle, ['Press left button to start','and stop the demo'], 'image', 12, 12, 'black', 'true')  </l>
+<l>get_mbutton (WindowHandle, Row3, Column3, Button1)  </l>
+<l>wait_seconds (0.5)  </l>
+<l>Button := 0  </l>
+<l>while (Button # 1)  </l>
+<l>    dev_set_window (WindowHandle)  </l>
+<l>    dev_set_part (0, 0, Height-1, Width-1)  </l>
+<l>    grab_image (ImageCheck, FGHandle)  </l>
+<l>    dev_display (ImageCheck)  </l>
+<c>    ***count_second***计算从开始S1到S2中算子所用时间  </c>
+<l>    count_seconds (S1)  </l>
+<c>    ***模板搜索***  </c>
+<l>    find_shape_model (ImageCheck, ModelID, 0, rad(360), 0.7, 1, 0.5, 'least_squares', 4, 0.7, RowCheck, ColumnCheck, AngleCheck, Score)  </l>
+<l>    count_seconds (S2)  </l>
+<l>    dev_display (ImageCheck)  </l>
+<c>    ***显示找到的模板图像  </c>
+<l>    if (|Score| &gt; 0)  </l>
+<l>        dev_set_color ('green')  </l>
+<l>        hom_mat2d_identity (HomMat2DIdentity)  </l>
+<l>        hom_mat2d_translate (HomMat2DIdentity, RowCheck, ColumnCheck, HomMat2DTranslate)  </l>
+<l>        hom_mat2d_rotate (HomMat2DTranslate, AngleCheck, RowCheck, ColumnCheck, HomMat2DRotate)  </l>
+<l>        affine_trans_contour_xld (ShapeModel, ShapeModelTrans, HomMat2DRotate)  </l>
+<l>        dev_display (ShapeModelTrans)  </l>
+<c>   ******利用仿射变换对于划定ROI区域做位置变换*****  </c>
+<l>        affine_trans_pixel (HomMat2DRotate, Rect1Row, Rect1Col, Rect1RowCheck, Rect1ColCheck)  </l>
+<l>        affine_trans_pixel (HomMat2DRotate, Rect2Row, Rect2Col, Rect2RowCheck, Rect2ColCheck)  </l>
+<l>        gen_rectangle2 (Rectangle1Check, Rect1RowCheck, Rect1ColCheck, AngleCheck, RectLength1, RectLength2)  </l>
+<l>        gen_rectangle2 (Rectangle2Check, Rect2RowCheck, Rect2ColCheck, AngleCheck, RectLength1, RectLength2)  </l>
+<l>        dev_set_color ('blue')  </l>
+<l>        dev_set_draw ('margin')  </l>
+<l>        dev_set_line_width (3)  </l>
+<l>        dev_display (Rectangle1Check)  </l>
+<l>        dev_display (Rectangle2Check)  </l>
+<l>        dev_set_draw ('fill')  </l>
+<l>        count_seconds (S3)  </l>
+<l>        gen_measure_rectangle2 (Rect1RowCheck, Rect1ColCheck, AngleCheck, RectLength1, RectLength2, Width, Height, 'bilinear', MeasureHandle1)  </l>
+<l>        gen_measure_rectangle2 (Rect2RowCheck, Rect2ColCheck, AngleCheck, RectLength1, RectLength2, Width, Height, 'bilinear', MeasureHandle2)  </l>
+<c>         </c>
+<l>        measure_pairs (ImageCheck, MeasureHandle1, 2, 90, 'positive', 'all', RowEdgeFirst1, ColumnEdgeFirst1, AmplitudeFirst1, RowEdgeSecond1, ColumnEdgeSecond1, AmplitudeSecond1, IntraDistance1, InterDistance1)  </l>
+<l>        measure_pairs (ImageCheck, MeasureHandle2, 2, 90, 'positive', 'all', RowEdgeFirst2, ColumnEdgeFirst2, AmplitudeFirst2, RowEdgeSecond2, ColumnEdgeSecond2, AmplitudeSecond2, IntraDistance2, InterDistance2)  </l>
+<l>        close_measure (MeasureHandle1)  </l>
+<l>        close_measure (MeasureHandle2)  </l>
+<l>        count_seconds (S4)  </l>
+<l>        dev_set_color ('red')  </l>
+<c>        *****显示检测边缘  </c>
+<c>          </c>
+<l>        disp_line (WindowHandle, RowEdgeFirst1-RectLength2*cos(AngleCheck), ColumnEdgeFirst1-RectLength2*sin(AngleCheck), RowEdgeFirst1+RectLength2*cos(AngleCheck), ColumnEdgeFirst1+RectLength2*sin(AngleCheck))  </l>
+<l>        disp_line (WindowHandle, RowEdgeSecond1-RectLength2*cos(AngleCheck), ColumnEdgeSecond1-RectLength2*sin(AngleCheck), RowEdgeSecond1+RectLength2*cos(AngleCheck), ColumnEdgeSecond1+RectLength2*sin(AngleCheck))  </l>
+<l>        disp_line (WindowHandle, RowEdgeFirst2-RectLength2*cos(AngleCheck), ColumnEdgeFirst2-RectLength2*sin(AngleCheck), RowEdgeFirst2+RectLength2*cos(AngleCheck), ColumnEdgeFirst2+RectLength2*sin(AngleCheck))  </l>
+<l>        disp_line (WindowHandle, RowEdgeSecond2-RectLength2*cos(AngleCheck), ColumnEdgeSecond2-RectLength2*sin(AngleCheck), RowEdgeSecond2+RectLength2*cos(AngleCheck), ColumnEdgeSecond2+RectLength2*sin(AngleCheck))  </l>
+<l>        dev_set_line_width (1)  </l>
+<l>        NumLeads := |IntraDistance1|+|IntraDistance2|  </l>
+<l>        MinDistance := min([InterDistance1,InterDistance2])  </l>
+<l>        dev_set_window (WindowHandleText)  </l>
+<l>        dev_set_part (0, 0, 119, Width-1)  </l>
+<l>        dev_clear_window ()  </l>
+<l>        disp_message (WindowHandleText, 'Matching: Time: '+((S2-S1)*1000)$'5.2f'+'ms , Score: '+Score$'7.5f', 'image', 20, 20, 'green', 'false')  </l>
+<l>        disp_message (WindowHandleText, 'Measure:  Time: '+((S4-S3)*1000)$'5.2f'+' ms, Num. leads: '+(NumLeads)$'2d', 'image', 50, 20, 'red', 'false')  </l>
+<l>        disp_message (WindowHandleText, '          Min. lead dist: '+MinDistance$'6.3f', 'image', 80, 20, 'red', 'false')  </l>
+<l>    endif  </l>
+<l>    dev_error_var (Error, 1)  </l>
+<l>    dev_set_check ('~give_error')  </l>
+<l>    get_mposition (WindowHandle, R, C, Button)  </l>
+<l>    dev_error_var (Error, 0)  </l>
+<l>    dev_set_check ('give_error')  </l>
+<l>    if (Error#H_MSG_TRUE)  </l>
+<l>        Button := 0  </l>
+<l>    endif  </l>
+<l>endwhile  </l>
+<l>dev_set_window (WindowHandleText)  </l>
+<l>dev_close_window ()  </l>
+<l>clear_shape_model (ModelID)  </l>
+<l>close_framegrabber (FGHandle)  </l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>

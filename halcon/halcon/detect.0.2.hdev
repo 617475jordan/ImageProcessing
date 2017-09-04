@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="main">
+<interface/>
+<body>
+<c>* This example program shows how to find scaled and rotated shape models.</c>
+<l>dev_update_pc ('off')</l>
+<l>dev_update_window ('off')</l>
+<l>dev_update_var ('off')</l>
+<l>read_image (Image, 'green-dot')</l>
+<l>get_image_size (Image, Width, Height) </l>
+<l>dev_close_window ()</l>
+<l>dev_open_window (0, 0, Width, Height, 'black', WindowHandle)</l>
+<l>dev_set_color ('red')</l>
+<l>dev_display (Image)</l>
+<l>threshold (Image, Region, 0, 128) </l>
+<l>connection (Region, ConnectedRegions)  </l>
+<l>select_shape (ConnectedRegions, SelectedRegions, 'area', 'and', 10000, 20000) </l>
+<l>fill_up (SelectedRegions, RegionFillUp)   </l>
+<l>dilation_circle (RegionFillUp, RegionDilation, 5.5)  </l>
+<l>reduce_domain (Image, RegionDilation, ImageReduced) </l>
+<l>create_scaled_shape_model (ImageReduced, 5, rad(-45), rad(90), 'auto', 0.8, 1.0, 'auto', 'none', 'ignore_global_polarity', 40, 10, ModelID)</l>
+<c></c>
+<l>get_shape_model_contours (Model, ModelID, 1)</l>
+<l>area_center (RegionFillUp, Area, RowRef, ColumnRef) </l>
+<l>vector_angle_to_rigid (0, 0, 0, RowRef, ColumnRef, 0, HomMat2D) //vector_angle_to_rigid只需要一个点对及一个角度对即可计算刚性变换矩阵，所以可利用find_shape_model的结果</l>
+<l>affine_trans_contour_xld (Model, ModelTrans, HomMat2D) //对XLD轮廓(contour)进行一个任意二维仿射变换。 将model轮廓转换为相对于全图的，得到ModelTrans</l>
+<l>dev_display (Image)</l>
+<l>dev_display (ModelTrans) //在全局中显示模型区域 ，注意modeltrans 为xld 轮廓！！！</l>
+<l>read_image (ImageSearch, 'board/board.seq')</l>
+<l>dev_display (ImageSearch)//将之前模型ID 作为模板，</l>
+<l>find_scaled_shape_model (ImageSearch, ModelID, rad(-45), rad(90), 0.8, 1.0, 0.5, 0, 0.5, 'least_squares', 5, 0.8, Row, Column, Angle, Scale, Score)</l>
+<l>for I := 0 to |Score|-1 by 1</l>
+<l>    hom_mat2d_identity (HomMat2DIdentity)</l>
+<l>    hom_mat2d_translate (HomMat2DIdentity, Row[I], Column[I], HomMat2DTranslate)</l>
+<l>    hom_mat2d_rotate (HomMat2DTranslate, Angle[I], Row[I], Column[I], HomMat2DRotate)</l>
+<l>    hom_mat2d_scale (HomMat2DRotate, Scale[I], Scale[I], Row[I], Column[I], HomMat2DScale)</l>
+<c></c>
+<l>    affine_trans_contour_xld (Model, ModelTrans, HomMat2DScale)  </l>
+<l>    gen_region_contour_xld(ModelTrans,Region2,'filled')      </l>
+<l>    intensity ( Region2, ImageSearch, Mean, Deviation )      </l>
+<l>    dev_display (ModelTrans)</l>
+<l>endfor</l>
+<l>clear_shape_model (ModelID)</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
