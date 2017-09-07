@@ -1,9 +1,6 @@
 #pragma once
 #include <Kinect.h>
-#include <opencv2\opencv.hpp>
-#include <iostream>
-using namespace std;
-using namespace cv;
+#include <opencv_all.h>
 // Safe release for interfaces
 template<class Interface>
 inline void SafeRelease(Interface *& pInterfaceToRelease)
@@ -24,9 +21,11 @@ class CBodyBasics
 public:
 	CBodyBasics();
 	~CBodyBasics();
-	Mat                    Update();//获得骨架、背景二值图和深度信息
-	HRESULT                 InitializeDefaultSensor();//用于初始化kinect
-
+	Mat                     deepUpdate();//获得骨架、背景二值图和深度信息
+	Mat                     colorUpdate();
+	HRESULT                 deepInitializeDefaultSensor();//用于初始化深度kinect
+	HRESULT                 colorInitializeDefaultSensor();//用于初始化kinect
+	void clear();
 private:
 	IKinectSensor*          m_pKinectSensor=NULL;//kinect源
 	ICoordinateMapper*      m_pCoordinateMapper=NULL;//用于坐标变换
@@ -34,6 +33,10 @@ private:
 	IDepthFrameReader*      m_pDepthFrameReader = NULL;//用于深度数据读取
 	IBodyIndexFrameReader*  m_pBodyIndexFrameReader = NULL;//用于背景二值图读取
 
+	/******彩色数据*****************/
+	IColorFrameSource *colorsource;
+	IColorFrameReader *colorreader;
+	IFrameDescription *colorde;
 	//通过获得到的信息，把骨架和背景二值图画出来
 	void                    ProcessBody(int nBodyCount, IBody** ppBodies);
 	//画骨架函数
@@ -44,5 +47,7 @@ private:
 	//显示图像的Mat
 	cv::Mat skeletonImg;
 	cv::Mat depthImg;
+	int height;
+	int width;
 };
 

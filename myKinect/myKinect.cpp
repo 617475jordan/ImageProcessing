@@ -1,8 +1,49 @@
 #include "myKinect.h"
 #include <iostream>
 
+HRESULT CBodyBasics::colorInitializeDefaultSensor()
+{
+	HRESULT hr;
+	hr = GetDefaultKinectSensor(&m_pKinectSensor);
+
+	if (FAILED(hr))
+	{
+		return hr;
+	}
+	m_pKinectSensor->Open();
+	//find kinect device
+	if (m_pKinectSensor)
+	{
+		colorsource = NULL;
+		colorreader = NULL;
+		colorde = NULL;
+
+		m_pKinectSensor->get_ColorFrameSource(&colorsource);
+		colorsource->OpenReader(&colorreader);
+		colorsource->get_FrameDescription(&colorde);
+		colorde->get_Height(&height);
+		colorde->get_Width(&width);
+	}
+	return hr;
+}
+Mat CBodyBasics::colorUpdate()
+{
+	IColorFrame *frame;
+	HRESULT hr = colorreader->AcquireLatestFrame(&frame);
+	Mat  src(height, width, CV_8UC4);      //注意：这里必须为4通道的图，Kinect的数据只能以Bgra格式传出
+	Mat  outImage(height, width, CV_8UC3);
+	Size m_size = Size(960, 540);
+	if (SUCCEEDED(hr))
+	{
+		frame->CopyConvertedFrameDataToArray(height*width * 4, reinterpret_cast<BYTE*>(src.data), ColorImageFormat::ColorImageFormat_Bgra);   //传出数据
+	}
+	SafeRelease(frame);
+	cvtColor(src, outImage, CV_RGBA2RGB);
+	resize(outImage, outImage, m_size);
+	return outImage;
+}
 /// Initializes the default Kinect sensor
-HRESULT CBodyBasics::InitializeDefaultSensor()
+HRESULT CBodyBasics::deepInitializeDefaultSensor()
 {
 	//make sure that the operation is ok
 	HRESULT hr;
@@ -89,7 +130,7 @@ HRESULT CBodyBasics::InitializeDefaultSensor()
 
 
 /// Main processing function
-Mat CBodyBasics::Update()
+Mat CBodyBasics::deepUpdate()
 {
 	//每次先清空skeletonImg
 	skeletonImg.setTo(0);
@@ -148,8 +189,8 @@ Mat CBodyBasics::Update()
 		delete[] depthArray;
 	}
 	SafeRelease(pDepthFrame);//必须要释放，否则之后无法获得新的frame数据
-	imshow("depthImg", depthImg);
-	cv::waitKey(1);
+	//imshow("depthImg", depthImg);
+	//cv::waitKey(1);
 	//-----------------------------获取骨架并显示----------------------------
 	if (SUCCEEDED(hr))
 	{
@@ -333,6 +374,21 @@ m_pBodyFrameReader(NULL){}
 
 /// Destructor
 CBodyBasics::~CBodyBasics()
+{
+	SafeRelease(m_pBodyFrameReader);
+	SafeRelease(m_pCoordinateMapper);
+	SafeRelease(m_pDepthFrameReader);
+	SafeRelease(m_pBodyIndexFrameReader);
+	SafeRelease(colorsource);
+	SafeRelease(colorreader);
+	SafeRelease(colorde);
+	if (m_pKinectSensor)
+	{
+		m_pKinectSensor->Close();
+	}
+	SafeRelease(m_pKinectSensor);
+}
+void CBodyBasics::clear()//针对deep Kinect
 {
 	SafeRelease(m_pBodyFrameReader);
 	SafeRelease(m_pCoordinateMapper);
