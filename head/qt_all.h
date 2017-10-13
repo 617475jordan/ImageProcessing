@@ -4,8 +4,12 @@
 #include <QtWidgets\qlabel.h>
 #include <QtWidgets\QGridLayout>
 #include <QtWidgets\QCheckBox>
-#include <QGroupBox>  
-#include <QRadioButton>
+#include <QtWidgets\QFileDialog>
+#include <QtWidgets\QMessageBox>
+#include <QtCore\QTextCodec>
+#include <QtGui\QMouseEvent>
+#include <QtWidgets\QGroupBox>  
+#include <QtWidgets\QRadioButton>
 #if _DEBUG 
 #pragma comment(lib, "..\\lib\\Qt5Cored.lib")
 #pragma comment(lib, "..\\lib\\Qt5Guid.lib")
