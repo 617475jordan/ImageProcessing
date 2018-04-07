@@ -10,97 +10,57 @@ getFiles::~getFiles()
 {
 }
 
-void getFiles::getAllFiles(string path, vector<string>& files)
+std::vector<std::string> getFiles::getAllFiles(string path)
 {
-	// ÎÄ¼ş¾ä±ú
-	long hFile = 0;
-	// ÎÄ¼şĞÅÏ¢
-	struct _finddata_t fileinfo;
-
-	string p;
-
-	if ((hFile = _findfirst(p.assign(path).append("\\*").c_str(), &fileinfo)) != -1)
+	std::wstring stemp = s2ws(path + "\\*.*");
+	LPCTSTR lpFileName = stemp.c_str();
+	HANDLE hFile;
+	WIN32_FIND_DATA pNextInfo;  //æœç´¢å¾—åˆ°çš„æ–‡ä»¶ä¿¡æ¯å°†å‚¨å­˜åœ¨pNextInfoä¸­;
+	hFile = FindFirstFile(lpFileName, &pNextInfo);//è¯·æ³¨æ„æ˜¯ &pNextInfo , ä¸æ˜¯ pNextInfo;
+	if (hFile == INVALID_HANDLE_VALUE)
 	{
-		do {
-			// ±£´æÎÄ¼şµÄÈ«Â·¾¶
-			files.push_back(p.assign(path).append("\\").append(fileinfo.name));
-
-		} while (_findnext(hFile, &fileinfo) == 0); //Ñ°ÕÒÏÂÒ»¸ö£¬³É¹¦·µ»Ø0£¬·ñÔò-1
-
-		_findclose(hFile);
+		//æœç´¢å¤±è´¥
+		exit(-1);
 	}
-}
-
-void getFiles::getAllFilesAndOthers(string path, vector<string>& files)
-{
-	//ÎÄ¼ş¾ä±ú
-	long hFile = 0;
-	//ÎÄ¼şĞÅÏ¢
-	struct _finddata_t fileinfo;
-	string p;
-	if ((hFile = _findfirst(p.assign(path).append("\\*").c_str(), &fileinfo)) != -1) {
-		do {
-			if ((fileinfo.attrib & _A_SUBDIR)) { //±È½ÏÎÄ¼şÀàĞÍÊÇ·ñÊÇÎÄ¼ş¼Ğ
-				if (strcmp(fileinfo.name, ".") != 0 && strcmp(fileinfo.name, "..") != 0) {
-					files.push_back(p.assign(path).append("\\").append(fileinfo.name));
-					//µİ¹éËÑË÷
-					getAllFiles(p.assign(path).append("\\").append(fileinfo.name), files);
-				}
-			}
-			else {
-				files.push_back(p.assign(path).append("\\").append(fileinfo.name));
-			}
-		} while (_findnext(hFile, &fileinfo) == 0); //Ñ°ÕÒÏÂÒ»¸ö£¬³É¹¦·µ»Ø0£¬·ñÔò-1
-		_findclose(hFile);
-	}
-}
-
-void getFiles::getSpecialTypeFiles(string path, vector<string>& files, string fileType)
-{
-	m_vecStrCurrentModel.clear();
-	// ÎÄ¼ş¾ä±ú
-	long hFile = 0;
-	// ÎÄ¼şĞÅÏ¢
-	struct _finddata_t fileinfo;
-
-	string p;
-
-	if ((hFile = _findfirst(p.assign(path).append("\\*" + fileType).c_str(), &fileinfo)) != -1) {
-		do {
-			// ±£´æÎÄ¼şµÄÈ«Â·¾¶
-			files.push_back(p.assign(path).append("\\").append(fileinfo.name));
-			m_vecStrCurrentModel.push_back(fileinfo.name);
-
-		} while (_findnext(hFile, &fileinfo) == 0); //Ñ°ÕÒÏÂÒ»¸ö£¬³É¹¦·µ»Ø0£¬·ñÔò-1
-
-		_findclose(hFile);
-	}
-}
-
-void getFiles::addFile(vector<string> m_vecStrFile)
-{
-	for (int i = 0; i<m_vecStrFile.size(); i++)
+	//wcout<<pNextInfo.cFileName<<endl;
+	//printf("%s\n", WcharToChar(pNextInfo.cFileName));
+	string m_strFileName;
+	vector<string> m_strAllFileNames;
+	while (FindNextFile(hFile, &pNextInfo))
 	{
-		if (_mkdir(m_vecStrFile[i].c_str()) == -1)
-		{
-			_mkdir(m_vecStrFile[i].c_str());
-		}
+		if (pNextInfo.cFileName[0] == '.')//è¿‡æ»¤.å’Œ..
+			continue;
+		//wcout<<pNextInfo.cFileName<<endl;
+		m_strFileName = WcharToChar(pNextInfo.cFileName);
+		m_strAllFileNames.push_back(m_strFileName);
+
+		//cout << m_strFileName << endl;
+		m_strFileName.clear();
+		//printf("%s\n", WcharToChar(pNextInfo.cFileName));
 	}
+	return m_strAllFileNames;
+	getchar();
 }
 
-void getFiles::deleteFile(vector<string> m_vecStrFile)
+std::wstring getFiles::s2ws(const std::string& s)
 {
-	for (int i = 0; i < m_vecStrFile.size(); i++)
-	{
-		if (_mkdir(m_vecStrFile[i].c_str()) == 0)
-		{
-			_rmdir(m_vecStrFile[i].c_str());
-		}
-	}
+	int len;
+	int slength = (int)s.length() + 1;
+	len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);
+	wchar_t* buf = new wchar_t[len];
+	MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
+	std::wstring r(buf);
+	delete[] buf;
+
+	return r.c_str();
 }
 
-std::vector<std::string> getFiles::currentModel()
+char* getFiles::WcharToChar(const wchar_t* wp)
 {
-	return m_vecStrCurrentModel;
+	char *m_char;
+	int len = WideCharToMultiByte(CP_ACP, 0, wp, wcslen(wp), NULL, 0, NULL, NULL);
+	m_char = new char[len + 1];
+	WideCharToMultiByte(CP_ACP, 0, wp, wcslen(wp), m_char, len, NULL, NULL);
+	m_char[len] = '\0';
+	return m_char;
 }
-
