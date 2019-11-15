@@ -19,7 +19,11 @@ void GetPathFiles::getFiles(std::string path, std::map<std::string,std::string>&
 {
 	std::string m_path = path + "//*.net.xml";
 	__int64  Handle;
-	long m_lIndex = 0;
+#if X86
+	long hFile = 0;
+#else
+	intptr_t hFile;
+#endif
 #if _WIN64
 	struct __finddata64_t  FileInfo;
 
